@@ -1,14 +1,12 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-export function createClient() {
+export const createClient = () => {
   const cookieStore = cookies()
 
-  // Create a server-side client for Supabase with cookie handling
-  // TODO: Replace these with environment variables once the .env.local issue is resolved.
   return createServerClient(
-    "https://your-project-id.supabase.co",
-    "your-supabase-anon-key",
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
