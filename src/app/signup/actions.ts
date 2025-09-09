@@ -2,8 +2,10 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
 
 export async function signup(formData: FormData) {
+  const origin = headers().get('origin')
   const email = formData.get('email') as string
   const password = formData.get('password') as string
   const supabase = createClient()
@@ -12,18 +14,16 @@ export async function signup(formData: FormData) {
     email,
     password,
     options: {
-      // email_redirect_to is not strictly required for the MVP,
-      // but good practice to include. It tells Supabase where to
-      // redirect the user after they click the confirmation link.
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: `${origin}/auth/callback`,
     },
   })
 
   if (error) {
     console.error('Signup error:', error.message)
-    redirect('/signup?error=Could not authenticate user')
+    // TODO: This should be a more user-friendly error message.
+    return redirect(`/signup?error=${encodeURIComponent(error.message)}`)
   }
 
-  // Redirect to a page that tells the user to check their email.
-  redirect('/signup/success')
+  // Redirect to a page that tells the user to check their email
+  return redirect('/signup/success?message=Check your email to confirm your account')
 }

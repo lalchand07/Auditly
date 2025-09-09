@@ -1,8 +1,8 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
 
 export async function login(formData: FormData) {
   const email = formData.get('email') as string
@@ -15,11 +15,11 @@ export async function login(formData: FormData) {
   })
 
   if (error) {
-    // TODO: Handle error more gracefully, e.g., by showing a message to the user.
     console.error('Login error:', error.message)
-    redirect('/login?error=Could not authenticate user')
+    return redirect(`/login?error=${encodeURIComponent(error.message)}`)
   }
 
+  // Revalidate the path to ensure the layout is updated with the new session
   revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  return redirect('/dashboard')
 }

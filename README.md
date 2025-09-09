@@ -88,14 +88,13 @@ Your app should now be running at [http://localhost:3000](http://localhost:3000)
 
 **Terminal 2: Run the Worker**
 
-The worker needs the same environment variables. The `start` script will use `ts-node` to run the TypeScript file directly.
+The worker will automatically load the environment variables from the `.env.local` file in the project root.
 
 ```bash
 cd worker
-npm install -g ts-node # If you don't have it installed globally
-SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY npm start
+npm start
 ```
-*Note: The command above injects the environment variables from the root `.env.local` file for the worker process. Make sure the variables are correctly set.*
+*Note: The `start` script uses `ts-node` to run the TypeScript file directly. `ts-node` is included as a dev dependency in the root `package.json`.*
 
 The worker will now be running and will start polling for `pending` jobs in your database every 10 seconds.
 
