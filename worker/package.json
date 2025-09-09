@@ -1,0 +1,13 @@
+{
+  "name": "worker",
+  "version": "1.0.0",
+  "description": "The background worker for scanning jobs.",
+  "main": "worker.ts",
+  "type": "module",
+  "scripts": {
+    "start": "node --loader ts-node/esm worker.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

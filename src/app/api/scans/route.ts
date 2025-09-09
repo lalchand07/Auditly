@@ -28,11 +28,79 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 })
   }
 
-  // TODO: Add logic to check if the user is a member of the workspace.
-  // For now, we trust the client sends a valid workspace_id the user has access to.
+  // 1. Check if the user is a member of the workspace.
+  // RLS policies should prevent this, but an explicit check provides a better error message.
+  const { data: member, error: memberError } = await supabase
+    .from('members')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .eq('workspace_id', workspace_id)
+    .single()
 
-  // TODO: Add logic to check if the user has reached their scan limit based on their plan.
+  if (memberError || !member) {
+    return NextResponse.json(
+      { error: 'You do not have permission to create scans in this workspace.' },
+      { status: 403 }
+    )
+  }
 
+  // 2. Check if the workspace has reached its scan limit based on the owner's plan.
+  const { data: workspaceData, error: workspaceError } = await supabase
+    .from('workspaces')
+    .select('owner_id')
+    .eq('id', workspace_id)
+    .single()
+
+  if (workspaceError || !workspaceData) {
+    return NextResponse.json({ error: 'Workspace not found.' }, { status: 404 })
+  }
+
+  const { data: ownerProfile, error: profileError } = await supabase
+    .from('users')
+    .select('plan')
+    .eq('id', workspaceData.owner_id)
+    .single()
+
+  if (profileError || !ownerProfile) {
+    return NextResponse.json(
+      { error: "Could not determine the workspace's subscription plan." },
+      { status: 500 }
+    )
+  }
+
+  const planLimits: Record<string, number> = {
+    starter: 10,
+    pro: 50,
+    agency: 200,
+  }
+  const plan = ownerProfile.plan ?? 'starter';
+  const limit = planLimits[plan];
+
+  if (typeof limit === 'undefined') {
+    return NextResponse.json({ error: 'Invalid plan.' }, { status: 500 });
+  }
+
+  const { count, error: countError } = await supabase
+    .from('scan_jobs')
+    .select('*', { count: 'exact', head: true })
+    .eq('workspace_id', workspace_id)
+
+  if (countError) {
+    console.error('Error counting scans:', countError)
+    return NextResponse.json(
+      { error: 'Failed to check usage limits' },
+      { status: 500 }
+    )
+  }
+
+  if (count >= limit) {
+    return NextResponse.json(
+      { error: `Scan limit of ${limit} reached for the '${plan}' plan.` },
+      { status: 402 } // Payment Required
+    )
+  }
+
+  // If all checks pass, create the scan job
   const { data, error } = await supabase
     .from('scan_jobs')
     .insert([
@@ -48,7 +116,7 @@ export async function POST(request: Request) {
   if (error) {
     console.error('Error creating scan job:', error)
     return NextResponse.json(
-      { error: 'Failed to create scan job' },
+      { error: 'Failed to create scan job. Please check your permissions.' },
       { status: 500 }
     )
   }
