@@ -11,9 +11,13 @@
   "dependencies": {
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.57.2",
+    "lighthouse": "^12.8.2",
     "next": "15.5.2",
+    "playwright": "^1.55.0",
     "react": "^19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "resend": "^6.0.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

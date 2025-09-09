@@ -7,15 +7,27 @@ export async function middleware(request: NextRequest) {
     // Feel free to remove once you have Supabase connected.
     const { supabase, response } = createClient(request)
 
-    // Refresh session if expired - required for Server Components
-    // https://supabase.com/docs/guides/auth/auth-helpers/nextjs#managing-session-with-middleware
-    await supabase.auth.getSession()
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    const { pathname } = request.nextUrl
+
+    // Define public routes
+    const publicRoutes = ['/', '/login', '/signup', '/auth/callback', '/public/free-audit']
+
+    // If the user is not logged in and trying to access a protected route
+    if (!session && !publicRoutes.includes(pathname) && !pathname.startsWith('/auth/')) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    // If the user is logged in and trying to access login/signup, redirect to dashboard
+    if (session && (pathname === '/login' || pathname === '/signup')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
 
     return response
   } catch (e) {
-    // If you are here, a Supabase client could not be created!
-    // This is likely because you have not set up environment variables.
-    // Check out http://localhost:3000 for Next Steps.
     return NextResponse.next({
       request: {
         headers: request.headers,
@@ -31,7 +43,6 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
      */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
